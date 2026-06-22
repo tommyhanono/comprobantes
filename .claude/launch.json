@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "comprobantes",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/tommyhanono/nodejs/lib/node_modules/npm/bin/npm-cli.js", "run", "dev:frontend"],
+      "port": 5173
+    }
+  ]
+}

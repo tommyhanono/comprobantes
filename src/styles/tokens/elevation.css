@@ -1,0 +1,11 @@
+:root {
+  --shadow-xs: 0 1px 2px 0 rgba(16, 25, 43, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(16, 25, 43, 0.08), 0 1px 2px -1px rgba(16, 25, 43, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(16, 25, 43, 0.08), 0 2px 4px -2px rgba(16, 25, 43, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(16, 25, 43, 0.10), 0 4px 6px -4px rgba(16, 25, 43, 0.07);
+  --shadow-xl: 0 20px 25px -5px rgba(16, 25, 43, 0.12), 0 8px 10px -6px rgba(16, 25, 43, 0.06);
+  --shadow-inset: inset 0 1px 2px rgba(16, 25, 43, 0.06);
+  --ring-focus:   0 0 0 3px rgba(27, 58, 92, 0.25);
+  --ring-success: 0 0 0 3px rgba(13, 110, 77, 0.25);
+  --ring-warning: 0 0 0 3px rgba(194, 85, 0, 0.25);
+}
