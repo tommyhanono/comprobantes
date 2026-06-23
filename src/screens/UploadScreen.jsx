@@ -26,15 +26,9 @@ function Header({ onAdmin }) {
         <button onClick={onAdmin} style={{
           background: 'rgba(255,255,255,0.12)',
           border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 6,
-          padding: '4px 12px',
-          cursor: 'pointer',
-          fontFamily: 'var(--font-body)',
-          fontSize: 11,
-          fontWeight: 600,
-          color: 'rgba(255,255,255,0.8)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.07em',
+          borderRadius: 6, padding: '4px 12px', cursor: 'pointer',
+          fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+          color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.07em',
         }}>
           Admin
         </button>
@@ -52,8 +46,7 @@ function InfoRow({ label, value, mono, small, color }) {
       <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-subtle)' }}>{label}</span>
       <span style={{
         fontFamily: mono ? 'var(--font-mono)' : 'var(--font-body)',
-        fontSize: small ? 12 : 14,
-        fontWeight: 600,
+        fontSize: small ? 12 : 14, fontWeight: 600,
         color: color || 'var(--color-text)',
       }}>{value}</span>
     </div>
@@ -67,13 +60,9 @@ function SuccessView({ folio, ts, monto, nombre, previewUrl, onReset }) {
 
       <div style={{ textAlign: 'center', padding: '0 4px' }}>
         <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 27,
-          fontWeight: 700,
-          color: 'var(--color-text)',
-          margin: '0 0 6px',
-          letterSpacing: '-0.02em',
-          lineHeight: 1.22,
+          fontFamily: 'var(--font-display)', fontSize: 27, fontWeight: 700,
+          color: 'var(--color-text)', margin: '0 0 6px',
+          letterSpacing: '-0.02em', lineHeight: 1.22,
         }}>
           Tu comprobante<br />fue recibido
         </h2>
@@ -85,17 +74,13 @@ function SuccessView({ folio, ts, monto, nombre, previewUrl, onReset }) {
       </div>
 
       <div style={{
-        backgroundColor: 'var(--color-surface)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '16px 20px',
-        boxShadow: 'var(--shadow-sm)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 11,
+        backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)',
+        padding: '16px 20px', boxShadow: 'var(--shadow-sm)',
+        display: 'flex', flexDirection: 'column', gap: 11,
       }}>
-        <InfoRow label="Folio"    value={'#' + folio}      mono color="var(--color-success)" />
-        {monto && <InfoRow label="Monto"    value={'B/. ' + monto} mono />}
-        <InfoRow label="Recibido" value={ts}               mono small />
+        <InfoRow label="Folio"    value={'#' + folio}                          mono color="var(--color-success)" />
+        {monto && <InfoRow label="Monto"   value={'B/. ' + Number(monto).toFixed(2)} mono />}
+        <InfoRow label="Recibido" value={ts}                                   mono small />
       </div>
 
       <Button variant="ghost" fullWidth onClick={onReset}>
@@ -111,22 +96,21 @@ export function UploadScreen({ onAdmin }) {
   const [previewUrl, setPreview]  = React.useState(null)
   const [progress, setProgress]   = React.useState(0)
   const [nombre, setNombre]       = React.useState('')
-  const [monto, setMonto]         = React.useState('')
   const [folio, setFolio]         = React.useState('FOL-0001')
+  const [montoOcr, setMontoOcr]   = React.useState(null)
   const [errors, setErrors]       = React.useState({})
   const [apiError, setApiError]   = React.useState(null)
 
   function handleFile(f) {
     setFile(f)
     setPreview(URL.createObjectURL(f))
-    setDropState('empty')
+    setErrors(prev => ({ ...prev, drop: undefined }))
   }
 
   async function handleSubmit() {
     const e = {}
     if (!nombre.trim()) e.nombre = 'Ingresa tu nombre completo'
-    if (!monto.trim())  e.monto  = 'Ingresa el monto pagado'
-    if (!file)          e.drop   = 'Selecciona la imagen de tu comprobante'
+    if (!file)          e.drop   = 'Selecciona la foto de tu comprobante'
     if (Object.keys(e).length) { setErrors(e); return }
 
     setErrors({})
@@ -135,8 +119,8 @@ export function UploadScreen({ onAdmin }) {
     setProgress(10)
 
     try {
-      // 1. Upload image to Supabase Storage
-      const ext = file.name.split('.').pop() || 'jpg'
+      // 1. Upload to Supabase Storage
+      const ext  = file.name.split('.').pop() || 'jpg'
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
       const { error: uploadErr } = await supabase.storage
         .from('comprobantes-images')
@@ -149,12 +133,12 @@ export function UploadScreen({ onAdmin }) {
         .from('comprobantes-images')
         .getPublicUrl(path)
 
-      // 2. Call verify endpoint
+      // 2. Verify endpoint
       setProgress(50)
-      const res = await fetch('/api/verify', {
+      const res  = await fetch('/api/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: publicUrl, nombrePadre: nombre.trim(), montoDeclarado: monto.trim() }),
+        body: JSON.stringify({ imageUrl: publicUrl, nombrePadre: nombre.trim() }),
       })
 
       setProgress(90)
@@ -162,6 +146,7 @@ export function UploadScreen({ onAdmin }) {
       if (!res.ok) throw new Error(data.error || 'Error verificando comprobante')
 
       setFolio(data.folio)
+      setMontoOcr(data.monto)
       setProgress(100)
       setTimeout(() => setDropState('success'), 200)
 
@@ -178,12 +163,12 @@ export function UploadScreen({ onAdmin }) {
     setPreview(null)
     setProgress(0)
     setNombre('')
-    setMonto('')
+    setMontoOcr(null)
     setErrors({})
     setApiError(null)
   }
 
-  const d = new Date()
+  const d  = new Date()
   const ts = d.toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
     + ', ' + d.toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit', hour12: true })
 
@@ -195,13 +180,9 @@ export function UploadScreen({ onAdmin }) {
         {dropState !== 'success' && (
           <div>
             <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 26,
-              fontWeight: 700,
-              color: 'var(--color-text)',
-              margin: '0 0 5px',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.2,
+              fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700,
+              color: 'var(--color-text)', margin: '0 0 5px',
+              letterSpacing: '-0.02em', lineHeight: 1.2,
             }}>
               Sube tu comprobante<br />de pago
             </h1>
@@ -212,15 +193,22 @@ export function UploadScreen({ onAdmin }) {
         )}
 
         {dropState === 'success' ? (
-          <SuccessView folio={folio} ts={ts} monto={monto} nombre={nombre} previewUrl={previewUrl} onReset={handleReset} />
+          <SuccessView
+            folio={folio} ts={ts} monto={montoOcr}
+            nombre={nombre} previewUrl={previewUrl} onReset={handleReset}
+          />
         ) : (
           <>
-            <DropZone state={dropState} previewUrl={previewUrl} progress={progress} folio={folio} onChange={handleFile} />
+            <DropZone
+              state={dropState} previewUrl={previewUrl}
+              progress={progress} folio={folio} onChange={handleFile}
+            />
             {errors.drop && (
               <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-warning)', fontFamily: 'var(--font-body)' }}>
                 {errors.drop}
               </span>
             )}
+
             <Input
               id="nombre"
               label="Tu nombre completo"
@@ -230,17 +218,7 @@ export function UploadScreen({ onAdmin }) {
               error={errors.nombre}
               required
             />
-            <Input
-              id="monto"
-              label="Monto pagado"
-              placeholder="0.00"
-              prefix="B/."
-              inputMode="decimal"
-              value={monto}
-              onChange={e => setMonto(e.target.value)}
-              error={errors.monto}
-              required
-            />
+
             {apiError && (
               <div style={{
                 backgroundColor: 'var(--color-warning-bg)',
@@ -254,10 +232,9 @@ export function UploadScreen({ onAdmin }) {
                 {apiError}
               </div>
             )}
+
             <Button
-              variant="primary"
-              size="lg"
-              fullWidth
+              variant="primary" size="lg" fullWidth
               onClick={handleSubmit}
               disabled={dropState === 'loading'}
             >

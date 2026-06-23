@@ -69,7 +69,7 @@ async function sendWhatsApp(message) {
 
 // ── Main verify endpoint ─────────────────────────────────────────────────────
 app.post('/api/verify', async (req, res) => {
-  const { imageUrl, nombrePadre, montoDeclarado } = req.body
+  const { imageUrl, nombrePadre } = req.body
   if (!imageUrl || !nombrePadre) {
     return res.status(400).json({ error: 'Faltan campos requeridos' })
   }
@@ -205,11 +205,13 @@ Si un campo no es legible, ponlo como null. NUNCA inventes datos.`,
 
     if (insertErr) throw new Error('Error guardando en base de datos: ' + insertErr.message)
 
-    // 7. WhatsApp alert if duplicado
+    // 7. WhatsApp — siempre notifica, mensaje distinto si es duplicado
+    const montoStr = ocrData.monto != null ? `B/. ${Number(ocrData.monto).toFixed(2)}` : 'monto no detectado'
+
     if (status === 'duplicado' && matchedId) {
       const { data: original } = await supabase
         .from('comprobantes')
-        .select('nombre_padre, created_at, monto')
+        .select('nombre_padre, created_at')
         .eq('id', matchedId)
         .single()
 
@@ -217,21 +219,30 @@ Si un campo no es legible, ponlo como null. NUNCA inventes datos.`,
         ? new Date(original.created_at).toLocaleDateString('es-PA', { day: 'numeric', month: 'short', year: 'numeric' })
         : 'fecha desconocida'
 
-      const msgText = [
+      await sendWhatsApp([
         '⚠️ *DUPLICADO DETECTADO — Comprobantes*',
         '',
         `Padre: ${nombrePadre}`,
-        `Monto: B/. ${ocrData.monto ?? montoDeclarado}`,
+        `Monto: ${montoStr}`,
         '',
-        `Coincide con el comprobante de *${original?.nombre_padre || 'padre anterior'}* del ${originalDate}.`,
-        '',
+        `Coincide con comprobante de *${original?.nombre_padre || 'padre anterior'}* del ${originalDate}.`,
         'Revisar en el panel admin.',
-      ].join('\n')
+      ].join('\n'))
 
-      await sendWhatsApp(msgText)
+    } else {
+      // Notificación normal de comprobante recibido
+      const banco = ocrData.banco ? ` · ${ocrData.banco}` : ''
+      const ref   = ocrData.referencia ? ` · ${ocrData.referencia}` : ''
+      await sendWhatsApp([
+        '✅ *Comprobante recibido — Comprobantes*',
+        '',
+        `Padre: ${nombrePadre}`,
+        `Monto: ${montoStr}${banco}${ref}`,
+        `Folio: #${folio}`,
+      ].join('\n'))
     }
 
-    return res.json({ status, folio, id: inserted.id })
+    return res.json({ status, folio, monto: ocrData.monto ?? null, id: inserted.id })
 
   } catch (err) {
     console.error('Error en /api/verify:', err)

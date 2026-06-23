@@ -1,11 +1,18 @@
 import React from 'react'
 import { UploadScreen } from './screens/UploadScreen.jsx'
 import { AdminScreen } from './screens/AdminScreen.jsx'
+import { AdminLogin } from './screens/AdminLogin.jsx'
 
 export default function App() {
-  const [screen, setScreen] = React.useState('upload')
+  const [screen, setScreen]       = React.useState('upload')
+  const [adminAuthed, setAuthed]  = React.useState(false)
 
-  return screen === 'admin'
-    ? <AdminScreen onBack={() => setScreen('upload')} />
-    : <UploadScreen onAdmin={() => setScreen('admin')} />
+  if (screen === 'admin') {
+    if (!adminAuthed) {
+      return <AdminLogin onSuccess={() => setAuthed(true)} />
+    }
+    return <AdminScreen onBack={() => { setScreen('upload'); setAuthed(false) }} />
+  }
+
+  return <UploadScreen onAdmin={() => setScreen('admin')} />
 }
